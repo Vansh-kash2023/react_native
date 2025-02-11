@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { login, getCurrentUser, logout } from "../../services/authService";
 
 const LoginScreen = ({ navigation }) => {
@@ -21,6 +21,8 @@ const LoginScreen = ({ navigation }) => {
     }, []);
 
     const handleLogin = async () => {
+        Keyboard.dismiss(); // Close keyboard when login button is pressed
+
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
@@ -34,37 +36,53 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <View className="flex-1 justify-center items-center bg-gray-100 px-6">
-            <Text className="text-3xl font-bold text-gray-800 mb-6">Login</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View className="flex-1 justify-center bg-white px-6">
+                <View className="w-full self-start">
+                    <Text className="text-4xl font-bold text-gray-800 mb-6">Login</Text>
+                </View>
 
-            {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
+                {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
 
-            <TextInput
-                className="w-full p-3 bg-white border border-gray-300 rounded-lg mb-3"
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
-            <TextInput
-                className="w-full p-3 bg-white border border-gray-300 rounded-lg mb-3"
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+                <View className="flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Email</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                    />
+                </View>
 
-            <TouchableOpacity
-                className="bg-blue-500 py-3 rounded-lg w-full items-center mb-4"
-                onPress={handleLogin}
-            >
-                <Text className="text-white text-lg font-semibold">Login</Text>
-            </TouchableOpacity>
+                <View className="flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Password</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+                </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
-                <Text className="text-gray-600">Don't have an account? <Text className="text-blue-500 font-semibold">Sign Up</Text></Text>
-            </TouchableOpacity>
-        </View>
+                <TouchableOpacity
+                    className="bg-black py-3 rounded-lg w-full items-center mb-4"
+                    onPress={handleLogin}
+                >
+                    <Text className="text-white text-lg font-semibold">Login</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} className="w-full flex items-center my-3">
+                <Text className="text-gray-600">Forgot Password?</Text>
+                </TouchableOpacity>
+
+
+                <TouchableOpacity onPress={() => navigation.navigate("Signup")} className="w-full flex items-center">
+                    <Text className="text-gray-600">Don't have an account? <Text className="text-black font-semibold">Sign Up</Text></Text>
+                </TouchableOpacity>
+            </View>
+        </TouchableWithoutFeedback>
     );
 };
 

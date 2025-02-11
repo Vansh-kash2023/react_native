@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { signup, getCurrentUser } from "../../services/authService";
 
 const SignupScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
+    const [emergencyContact, setEmergencyContact] = useState("");
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
@@ -22,12 +23,14 @@ const SignupScreen = ({ navigation }) => {
     }, []);
 
     const handleSignup = async () => {
+        Keyboard.dismiss(); // Close the keyboard when button is pressed
+
         if (!name.trim()) return setError("Please enter your name.");
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
         try {
-            await signup(email, password, name);
+            await signup(email, password, name, emergencyContact);
             setMessage("Signup successful! Proceed to login.");
             setError(""); // Clear any previous errors
         } catch (err) {
@@ -37,44 +40,69 @@ const SignupScreen = ({ navigation }) => {
     };
 
     return (
-        <View className="flex-1 justify-center items-center bg-gray-100 px-6">
-            <Text className="text-3xl font-bold text-gray-800 mb-6">Sign Up</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View className="flex-1 justify-center bg-white px-6">
+                <Text className="text-4xl w-full self-start font-bold text-gray-800 mb-2">Sign Up</Text>
 
-            {message ? <Text className="text-green-500 mb-3">{message}</Text> : null}
-            {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
+                {message ? <Text className="text-green-500 mb-3">{message}</Text> : null}
+                {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
+                <Text className="text-center m-4 mx-1">Please fill in the details below to create your account</Text>
 
-            <TextInput
-                className="w-full p-3 bg-white border border-gray-300 rounded-lg mb-3"
-                placeholder="Name"
-                value={name}
-                onChangeText={setName}
-            />
-            <TextInput
-                className="w-full p-3 bg-white border border-gray-300 rounded-lg mb-3"
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
-            <TextInput
-                className="w-full p-3 bg-white border border-gray-300 rounded-lg mb-3"
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
+                <View className="w-full flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Name</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Enter your name"
+                        value={name}
+                        onChangeText={setName}
+                    />
+                </View>
 
-            <TouchableOpacity
-                className="bg-green-500 py-3 rounded-lg w-full items-center mb-4"
-                onPress={handleSignup}
-            >
-                <Text className="text-white text-lg font-semibold">Sign Up</Text>
-            </TouchableOpacity>
+                <View className="w-full flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Email</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Enter your email"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                    />
+                </View>
 
-            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text className="text-gray-600">Already have an account? <Text className="text-green-500 font-semibold">Login</Text></Text>
-            </TouchableOpacity>
-        </View>
+                <View className="w-full flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Password</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Create a password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+                </View>
+
+                <View className="w-full flex flex-col gap-2">
+                    <Text className="font-bold text-lg">Emergency Contact (optional)</Text>
+                    <TextInput
+                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        placeholder="Enter emergency contact's number"
+                        value={emergencyContact}
+                        onChangeText={setEmergencyContact}
+                        keyboardType="phone-pad"
+                    />
+                </View>
+
+                <TouchableOpacity
+                    className="bg-black py-3 rounded-lg w-full items-center mb-4"
+                    onPress={handleSignup}
+                >
+                    <Text className="text-white text-lg font-semibold">Create Account</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => navigation.navigate("Login")} className="flex items-center">
+                    <Text className="text-gray-600">Already have an account? <Text className="text-black font-semibold">Login</Text></Text>
+                </TouchableOpacity>
+            </View>
+        </TouchableWithoutFeedback>
     );
 };
 
