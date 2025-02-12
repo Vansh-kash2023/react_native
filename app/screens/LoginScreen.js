@@ -1,39 +1,21 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
-import { login, getCurrentUser, logout } from "../../services/authService";
+import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        // Check if user is already logged in
-        const checkUser = async () => {
-            try {
-                const user = await getCurrentUser(); 
-                if (user) navigation.replace("Home"); // Redirect if logged in
-            } catch (err) {
-                console.log("No active session, proceed to login.");
-            }
-        };
-        checkUser();
-    }, []);
-
     const handleLogin = async () => {
         Keyboard.dismiss(); // Close keyboard when login button is pressed
+        setError(""); // Clear previous errors
 
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
-        try {
-            await logout(); // Ensure no active session before logging in
-            await login(email, password);
-            navigation.replace("Home");
-        } catch (err) {
-            setError(err.message);
-        }
+        navigation.navigate("Home");
     };
+
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -74,9 +56,8 @@ const LoginScreen = ({ navigation }) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} className="w-full flex items-center my-3">
-                <Text className="text-gray-600">Forgot Password?</Text>
+                    <Text className="text-gray-600">Forgot Password?</Text>
                 </TouchableOpacity>
-
 
                 <TouchableOpacity onPress={() => navigation.navigate("Signup")} className="w-full flex items-center">
                     <Text className="text-gray-600">Don't have an account? <Text className="text-black font-semibold">Sign Up</Text></Text>

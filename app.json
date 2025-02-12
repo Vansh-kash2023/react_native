@@ -1,7 +1,7 @@
 {
     "expo": {
-        "name": "LoginSignupApp",
-        "slug": "loginsignupapp",
+        "name": "DementiaSupportApp",
+        "slug": "DementiaSupportApp",
         "version": "1.0.0",
         "orientation": "portrait",
         "platforms": [

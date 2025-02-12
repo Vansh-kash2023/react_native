@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
-import { signup, getCurrentUser } from "../../services/authService";
 
 const SignupScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
@@ -10,18 +9,6 @@ const SignupScreen = ({ navigation }) => {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        const checkUser = async () => {
-            try {
-                const user = await getCurrentUser();
-                if (user) navigation.replace("Home");
-            } catch (err) {
-                console.log("No active session, user can sign up.");
-            }
-        };
-        checkUser();
-    }, []);
-
     const handleSignup = async () => {
         Keyboard.dismiss(); // Close the keyboard when button is pressed
 
@@ -30,7 +17,6 @@ const SignupScreen = ({ navigation }) => {
         if (!password.trim()) return setError("Please enter your password.");
 
         try {
-            await signup(email, password, name, emergencyContact);
             setMessage("Signup successful! Proceed to login.");
             setError(""); // Clear any previous errors
         } catch (err) {
