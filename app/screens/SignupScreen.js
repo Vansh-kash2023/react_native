@@ -84,7 +84,7 @@ const SignupScreen = ({ navigation }) => {
                     <Text className="text-white text-lg font-semibold">Create Account</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate("Login")} className="flex items-center">
+                <TouchableOpacity onPress={() => navigation.navigate("Timeline")} className="flex items-center">
                     <Text className="text-gray-600">Already have an account? <Text className="text-black font-semibold">Login</Text></Text>
                 </TouchableOpacity>
             </View>
