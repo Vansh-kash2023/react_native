@@ -1,27 +1,45 @@
-import { useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SignupScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [emergencyContact, setEmergencyContact] = useState("");
-    const [message, setMessage] = useState("");
     const [error, setError] = useState("");
 
     const handleSignup = async () => {
         Keyboard.dismiss(); // Close the keyboard when button is pressed
+        setError(""); // Clear previous errors
 
         if (!name.trim()) return setError("Please enter your name.");
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
         try {
-            setMessage("Signup successful! Proceed to login.");
-            setError(""); // Clear any previous errors
+            const response = await axios.post("https://life-path-flask.onrender.com/signup", {
+                name,
+                email,
+                password,
+                emergency_contact: emergencyContact
+            });
+
+            console.log("Signup Response:", response.data); // Log the API response
+        
+            if (response.status === 201) {
+                // await AsyncStorage.setItem("access_token", response.data.access_token);
+
+                Alert.alert("Signup Successful", "Your account has been created!", [
+                    { text: "OK", onPress: () => navigation.navigate("Login") }
+                ]);
+            } else {
+                setError(response.data.message || "Signup failed. Please try again.");
+            }
         } catch (err) {
-            setError(err.message);
-            setMessage(""); // Clear any previous success message
+            console.error("Signup Error:", err);
+            setError(err.message || "Something went wrong. Please try again.");
         }
     };
 
@@ -30,7 +48,6 @@ const SignupScreen = ({ navigation }) => {
             <View className="flex-1 justify-center bg-white px-6">
                 <Text className="text-4xl w-full self-start font-bold text-gray-800 mb-2">Sign Up</Text>
 
-                {message ? <Text className="text-green-500 mb-3">{message}</Text> : null}
                 {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
                 <Text className="text-center m-4 mx-1">Please fill in the details below to create your account</Text>
 
