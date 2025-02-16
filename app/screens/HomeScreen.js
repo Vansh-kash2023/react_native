@@ -14,17 +14,17 @@ const HomeScreen = ({ navigation }) => {
             </Text>
 
             <View className="w-11/12 space-y-4">
-                <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
+                <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("Timeline")}>
                     <Text className="text-white text-center">Interactive Life Timeline</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
+                <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("RoutineReminder")}>
                     <Text className="text-white text-center">Routine Reminders</Text>
                 </TouchableOpacity>
                 <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
                     <Text className="text-white text-center">Familiar Faces</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
-                    <Text className="text-white text-center">Cognitive Assessment</Text>
+                <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("CognitiveAssessment")}>
+                    <Text className="text-white text-center" >Cognitive Assessment</Text>
                 </TouchableOpacity>
                 <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
                     <Text className="text-white text-center">Emergency SOS</Text>
