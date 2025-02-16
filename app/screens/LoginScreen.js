@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
@@ -13,9 +15,26 @@ const LoginScreen = ({ navigation }) => {
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
-        navigation.navigate("Home");
-    };
+        try {
+            const response = await axios.post("https://life-path-flask.onrender.com/login", {
+                email,
+                password
+            });
 
+            if (response.status === 200 && response.data.access_token) {
+                await AsyncStorage.setItem("access_token", response.data.access_token);
+                console.log(response.data.access_token);
+
+                Alert.alert("Login Successful", "Welcome back!", [
+                    { text: "OK", onPress: () => navigation.navigate("Home") }
+                ]);
+            } else {
+                setError(response.data.message || "Login failed. Please try again.");
+            }
+        } catch (err) {
+            setError(err.message || "Something went wrong. Please try again.");
+        }
+    };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
