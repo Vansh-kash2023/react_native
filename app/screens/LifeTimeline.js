@@ -1,6 +1,10 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, FlatList, Keyboard, TouchableWithoutFeedback, Alert, Image } from "react-native";
+import { 
+  View, Text, TextInput, TouchableOpacity, FlatList, 
+  Keyboard, TouchableWithoutFeedback, Alert, Image 
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system";
 import axios from "axios";
 import { createStackNavigator } from "@react-navigation/stack";
 
@@ -11,6 +15,7 @@ const InteractiveTimeline = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
+  const [imageBase64, setImageBase64] = useState(null);
   const [error, setError] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
@@ -24,57 +29,42 @@ const InteractiveTimeline = () => {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
+      base64: true, // Capture Base64 directly
     });
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+      setImageBase64(result.assets[0].base64);
     }
   };
 
   const handleAddPost = async () => {
     Keyboard.dismiss();
 
-    if (!title.trim()) {
-      setError("Please enter a title.");
-      return;
-    }
-    if (!image) {
-      setError("Please select an image.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("date", new Date().toISOString().split("T")[0]);
-
-    const filename = image.split("/").pop();
-    const fileType = filename.split(".").pop();
-    formData.append("file", {
-      uri: image,
-      name: filename,
-      type: `image/${fileType}`,
-    });
+    if (!title.trim()) return setError("Please enter a title.");
+    if (!imageBase64) return setError("Please select an image.");
 
     try {
-      const response = await axios.post("https://life-path-flask.onrender.com/memories", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      const response = await axios.post("https://life-path-flask.onrender.com/memories", {
+        title,
+        description,
+        date: new Date().toISOString().split("T")[0],
+        image: imageBase64, // Send image as Base64 string
       });
-      console.log(response);
+
       if (response.status === 201) {
         const newPost = {
           id: response.data.id,
           title: response.data.title,
           description: response.data.description,
-          file: response.data.file, // Adjust if needed
+          file: `data:image/jpeg;base64,${response.data.image_base64}`, // Display Base64 image
         };
 
         setPosts((prevPosts) => [...prevPosts, newPost]);
         setTitle("");
         setDescription("");
         setImage(null);
+        setImageBase64(null);
         setError("");
         setIsAdding(false);
         Alert.alert("Success", "Memory added successfully!");
@@ -131,5 +121,4 @@ const InteractiveTimeline = () => {
   );
 };
 
-// ✅ **Corrected Export**
 export default InteractiveTimeline;

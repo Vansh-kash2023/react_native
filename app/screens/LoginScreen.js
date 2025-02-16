@@ -20,7 +20,8 @@ const LoginScreen = ({ navigation }) => {
                 email,
                 password
             });
-
+        console.log(email)
+        console.log(password)
             if (response.status === 200 && response.data.access_token) {
                 await AsyncStorage.setItem("access_token", response.data.access_token);
                 console.log(response.data.access_token);
