@@ -86,7 +86,7 @@ const SignupScreen = ({ navigation }) => {
                 </View>
 
                 <View className="w-full flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Emergency Contact (optional)</Text>
+                    <Text className="font-bold text-lg">Emergency Contact</Text>
                     <TextInput
                         className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
                         placeholder="Enter emergency contact's number"
