@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Ionicons from "react-native-vector-icons/Ionicons"; // Importing Ionicons
 
 const API_URL = "https://life-path-flask.onrender.com/reminders";
 
@@ -42,24 +43,25 @@ const RoutineRemindersScreen = () => {
   };
 
   useEffect(() => {
-    fetchReminders();
-
+    // Flag to prevent repeated alerts
+    let alertTimeout = null;
+  
     const checkReminders = () => {
       const now = new Date();
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
       const currentTimeInMinutes = currentHour * 60 + currentMinute;
-
+  
       reminders.forEach((reminder, index) => {
         const reminderTimeParts = reminder.time.split(":");
         const reminderHour = parseInt(reminderTimeParts[0], 10);
         const reminderMinute = parseInt(reminderTimeParts[1], 10);
         const reminderTimeInMinutes = reminderHour * 60 + reminderMinute;
-
+  
         if (currentTimeInMinutes === reminderTimeInMinutes && !reminder.alerted) {
           console.log("⏰ Reminder Time Matched for:", reminder.title, " - Alerting!");
-
-          Alert.alert("⏰ Reminder!", `${reminder.title} - ${reminder.description || "No description"}`, [ // Handle missing description
+  
+          Alert.alert("⏰ Reminder!", `${reminder.title} - ${reminder.description || "No description"}`, [
             {
               text: "OK",
               onPress: () => {
@@ -74,25 +76,40 @@ const RoutineRemindersScreen = () => {
         }
       });
     };
-
-    const reminderCheckInterval = setInterval(checkReminders, 60000);
+  
+    const scheduleReminderCheck = () => {
+      const now = new Date();
+      const currentSeconds = now.getSeconds();
+      const remainingTimeUntilNextMinute = 60 - currentSeconds;
+  
+      // Clear the timeout if it exists and schedule the next check
+      clearTimeout(alertTimeout);
+      alertTimeout = setTimeout(() => {
+        checkReminders(); // Check reminders once the minute changes
+        scheduleReminderCheck(); // Recurse to schedule the next check
+      }, remainingTimeUntilNextMinute * 1000);
+    };
+  
+    scheduleReminderCheck(); // Start the recurring check process
+  
     const fetchInterval = setInterval(fetchReminders, 30000);
-
+  
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       console.log("App State Changed:", nextAppState);
       appState.current = nextAppState;
-
+  
       if (nextAppState === "active") {
         fetchReminders();
       }
     });
-
+  
     return () => {
-      clearInterval(reminderCheckInterval);
       clearInterval(fetchInterval);
+      clearTimeout(alertTimeout);
       subscription.remove();
     };
-  }, []);
+  }, [reminders]);
+  
 
   const addReminder = async () => {
     if (!newReminder.title || !newReminder.time) {
@@ -128,6 +145,25 @@ const RoutineRemindersScreen = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      const response = await axios.delete(`${API_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.status === 200) {
+        Alert.alert("Success", "Reminder deleted!");
+        fetchReminders(); // Fetch reminders again after deletion
+      } else {
+        Alert.alert("Error", "Failed to delete reminder.");
+      }
+    } catch (error) {
+      console.error("Error deleting reminder:", error);
+      Alert.alert("Error", "Failed to delete reminder.");
+    }
+  };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ScrollView className="flex-1 bg-white px-6">
@@ -153,7 +189,6 @@ const RoutineRemindersScreen = () => {
               placeholder="Enter time (HH:MM)"
               value={newReminder.time}
               onChangeText={(text) => setNewReminder({ ...newReminder, time: text })}
-              keyboardType="numeric"
             />
           </View>
 
@@ -175,19 +210,26 @@ const RoutineRemindersScreen = () => {
             <Text className="text-white text-lg font-semibold">Add Reminder</Text>
           </TouchableOpacity>
 
-
           {reminders.map((reminder, index) => (
             <View
-              key={index}
+              key={reminder.id}
               className="bg-gray-100 rounded-2xl p-4 mb-4"
             >
               <Text className="text-lg font-semibold text-gray-800">
                 {reminder.title}
               </Text>
               <Text className="text-gray-600">{reminder.time}</Text>
-              {reminder.description ? (
+              {reminder.description && (
                 <Text className="text-gray-600 mt-2">{reminder.description}</Text>
-              ) : null}
+              )}
+              
+              {/* Delete Icon */}
+              <TouchableOpacity
+                onPress={() => handleDelete(reminder.id)}
+                style={{ position: "absolute", top: 10, right: 10 }}
+              >
+                <Ionicons name="trash" size={24} color="red" />
+              </TouchableOpacity>
             </View>
           ))}
         </View>
