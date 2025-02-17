@@ -9,7 +9,7 @@ import CognitiveAssessment from "../screens/CognitiveAssessmentScreen"
 import Profile from "../screens/ProfileScreen"
 import RoutineReminder from "../screens/RoutineReminderScreen"
 import LifeTimeline from "../screens/LifeTimeline"
-import chatbot from "../screens/chatbot"
+import Chatbot from "../screens/Chatbot"
 const Stack = createStackNavigator();
 
 const AuthNavigator = () => {
@@ -25,7 +25,7 @@ const AuthNavigator = () => {
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="RoutineReminder" component={RoutineReminder} />
       <Stack.Screen name="Timeline" component={LifeTimeline} />
-      <Stack.Screen name="chatbot" component={chatbot} />
+      <Stack.Screen name="Chatbot" component={Chatbot} />
     </Stack.Navigator>
   );
 };

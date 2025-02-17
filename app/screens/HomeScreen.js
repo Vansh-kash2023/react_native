@@ -41,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
                     <Text className="text-black font-bold">Home</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity className="items-center" onPress={() => navigation.navigate("chatbot")}>
+                <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Chatbot")}>
                     <Bot size={20} color="gray" />
                     <Text className="text-gray-600">Chatbot</Text>
                 </TouchableOpacity>
