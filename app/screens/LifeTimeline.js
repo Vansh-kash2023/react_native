@@ -7,6 +7,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from '@expo/vector-icons';
 
 const InteractiveTimeline = () => {
   const [posts, setPosts] = useState([]);
@@ -18,6 +19,7 @@ const InteractiveTimeline = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(null);
   const [accessToken, setAccessToken] = useState("");
 
   useEffect(() => {
@@ -99,12 +101,13 @@ const InteractiveTimeline = () => {
       });
 
       if (res.status === 201) {
-        setPosts((prev) => [...prev, { ...payload, id: res.data.id, file: res.data.image_url }]);
         setTitle("");
         setDescription("");
         setImage(null);
         setIsAdding(false);
         Alert.alert("Success", "Memory added successfully!");
+        setLoading(true);
+        await fetchMemories(accessToken);
       } else {
         setError(res.data.message || "Failed to add memory.");
       }
@@ -116,42 +119,80 @@ const InteractiveTimeline = () => {
     }
   };
 
+  const handleDelete = async (id) => {
+    setDeleting(id);
+    try {
+      const res = await axios.delete(`https://life-path-flask.onrender.com/memories/${id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+  
+      if (res.status === 200) {
+        Alert.alert("Success", "Memory deleted successfully!");
+        await fetchMemories(accessToken);
+      } else {
+        setError(res.data.message || "Failed to delete memory.");
+      }
+    } catch (err) {
+      console.error("Error deleting memory:", err.message);
+      setError("Failed to delete memory.");
+    } finally {
+      setDeleting(null);
+    }
+  };
+  
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1, padding: 16 }}
           keyboardShouldPersistTaps="handled"
           scrollEnabled={true}
         >
-          <Text className="text-4xl font-bold text-gray-800 mb-4 mt-10">
-            Interactive Life Timeline
-          </Text>
+          <Text className="text-4xl font-bold text-gray-800 mb-4 mt-10">Interactive Life Timeline</Text>
 
           {error ? <Text className="text-red-500 mb-2">{error}</Text> : null}
 
-          <TouchableOpacity 
-            className="bg-black py-3 rounded-lg items-center mb-4 mt-6" 
+          <TouchableOpacity
+            className="bg-black py-3 rounded-lg items-center mb-4 mt-6"
             onPress={() => setIsAdding((prev) => !prev)}
           >
-            <Text className="text-white font-bold text-lg">
-              {isAdding ? "Cancel" : "Add New Memory"}
-            </Text>
+            <Text className="text-white font-bold text-lg">{isAdding ? "Cancel" : "Add New Memory"}</Text>
           </TouchableOpacity>
 
           {isAdding && (
             <View className="mb-4">
-              <TextInput className="bg-gray-100 p-3 rounded-lg mb-2" placeholder="Enter title" value={title} onChangeText={setTitle} />
-              <TextInput className="bg-gray-100 p-3 rounded-lg mb-2" placeholder="Enter description" value={description} onChangeText={setDescription} />
-              <TouchableOpacity className="bg-blue-600 py-3 rounded-lg items-center mb-2" onPress={pickImage}>
+              <TextInput
+                className="bg-gray-100 p-3 rounded-lg mb-2"
+                placeholder="Enter title"
+                value={title}
+                onChangeText={setTitle}
+              />
+              <TextInput
+                className="bg-gray-100 p-3 rounded-lg mb-2"
+                placeholder="Enter description"
+                value={description}
+                onChangeText={setDescription}
+              />
+              <TouchableOpacity
+                className="bg-black py-3 rounded-lg items-center mb-2"
+                onPress={pickImage}
+              >
                 <Text className="text-white font-bold text-lg">Pick an Image</Text>
               </TouchableOpacity>
               {image && (
                 <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                  <Image source={{ uri: `data:image/${imageType};base64,${image}` }} style={{ width: "100%", height: 150, borderRadius: 10, marginTop: 10 }} />
+                  <Image
+                    source={{ uri: `data:image/${imageType};base64,${image}` }}
+                    style={{ width: "100%", height: 150, borderRadius: 10, marginTop: 10 }}
+                  />
                 </TouchableWithoutFeedback>
               )}
-              <TouchableOpacity className="bg-green-600 py-3 rounded-lg items-center" onPress={handleAddPost} disabled={submitting}>
+              <TouchableOpacity
+                className="bg-black py-3 rounded-lg items-center mt-3"
+                onPress={handleAddPost}
+                disabled={submitting}
+              >
                 <Text className="text-white font-bold text-lg">{submitting ? "Saving..." : "Save"}</Text>
               </TouchableOpacity>
             </View>
@@ -166,9 +207,30 @@ const InteractiveTimeline = () => {
                 <Text className="text-gray-600">{item.description}</Text>
                 {item.file && (
                   <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                    <Image source={{ uri: item.file }} style={{ width: "100%", height: 200, borderRadius: 10, marginTop: 10 }} />
+                    <Image
+                      source={{ uri: item.file }}
+                      style={{ width: "100%", height: 200, borderRadius: 10, marginTop: 10 }}
+                    />
                   </TouchableWithoutFeedback>
                 )}
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.id)}
+                  disabled={deleting === item.id}
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    padding: 10,
+                    backgroundColor: "#f00",
+                    borderRadius: 20,
+                  }}
+                >
+                  {deleting === item.id ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="trash" size={18} color="white" />
+                  )}
+                </TouchableOpacity>
               </View>
             ))
           )}
