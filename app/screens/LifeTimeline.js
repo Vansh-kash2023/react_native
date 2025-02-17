@@ -75,46 +75,50 @@ const InteractiveTimeline = () => {
   };
 
   const handleAddPost = async () => {
-    if (submitting) return;
-    Keyboard.dismiss();
-    setError("");
+  if (submitting) return;
+  Keyboard.dismiss();
+  setError("");
 
-    if (!title.trim()) return setError("Please enter a title.");
-    if (!image) return setError("Please select an image.");
+  if (!title.trim()) return setError("Please enter a title.");
+  if (!image) return setError("Please select an image.");
 
-    setSubmitting(true);
-    try {
-      const payload = {
-        title: title.trim(),
-        description: description.trim(),
-        date: new Date().toISOString().split("T")[0],
-        image: `data:image/${imageType};base64,${image}`,
-      };
+  setSubmitting(true);
+  try {
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      date: new Date().toISOString().split("T")[0],
+      image: `data:image/${imageType};base64,${image}`,
+    };
 
-      const res = await axios.post("https://life-path-flask.onrender.com/memories", payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+    const res = await axios.post("https://life-path-flask.onrender.com/memories", payload, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
-      if (res.status === 201) {
-        setPosts((prev) => [...prev, { ...payload, id: res.data.id, file: res.data.image_url }]);
-        setTitle("");
-        setDescription("");
-        setImage(null);
-        setIsAdding(false);
-        Alert.alert("Success", "Memory added successfully!");
-      } else {
-        setError(res.data.message || "Failed to add memory.");
-      }
-    } catch (err) {
-      console.error("Network Error:", err.message);
-      setError("Something went wrong. Check your internet.");
-    } finally {
-      setSubmitting(false);
+    if (res.status === 201) {
+      setTitle("");
+      setDescription("");
+      setImage(null);
+      setIsAdding(false);
+      Alert.alert("Success", "Memory added successfully!");
+
+      // **Show loader & refetch memories**
+      setLoading(true);
+      await fetchMemories(accessToken);
+    } else {
+      setError(res.data.message || "Failed to add memory.");
     }
-  };
+  } catch (err) {
+    console.error("Network Error:", err.message);
+    setError("Something went wrong. Check your internet.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -143,7 +147,7 @@ const InteractiveTimeline = () => {
             <View className="mb-4">
               <TextInput className="bg-gray-100 p-3 rounded-lg mb-2" placeholder="Enter title" value={title} onChangeText={setTitle} />
               <TextInput className="bg-gray-100 p-3 rounded-lg mb-2" placeholder="Enter description" value={description} onChangeText={setDescription} />
-              <TouchableOpacity className="bg-blue-600 py-3 rounded-lg items-center mb-2" onPress={pickImage}>
+              <TouchableOpacity className="bg-orange-400 py-3 rounded-lg items-center mb-2" onPress={pickImage}>
                 <Text className="text-white font-bold text-lg">Pick an Image</Text>
               </TouchableOpacity>
               {image && (
@@ -151,7 +155,7 @@ const InteractiveTimeline = () => {
                   <Image source={{ uri: `data:image/${imageType};base64,${image}` }} style={{ width: "100%", height: 150, borderRadius: 10, marginTop: 10 }} />
                 </TouchableWithoutFeedback>
               )}
-              <TouchableOpacity className="bg-green-600 py-3 rounded-lg items-center" onPress={handleAddPost} disabled={submitting}>
+              <TouchableOpacity className="bg-green-600 py-3 rounded-lg items-center mt-3" onPress={handleAddPost} disabled={submitting}>
                 <Text className="text-white font-bold text-lg">{submitting ? "Saving..." : "Save"}</Text>
               </TouchableOpacity>
             </View>
