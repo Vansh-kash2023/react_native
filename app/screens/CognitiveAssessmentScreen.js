@@ -11,8 +11,12 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { RadioButton } from "react-native-paper";
+import { Alert } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
 
 const CognitiveAssessmentScreen = () => {
+  const navigation = useNavigation(); // Get navigation instance
   const [accessToken, setAccessToken] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +40,6 @@ const CognitiveAssessmentScreen = () => {
       console.error("Token fetch error:", err);
     }
   };
-
   const fetchMemories = async (token) => {
     setLoading(true);
     try {
@@ -46,17 +49,30 @@ const CognitiveAssessmentScreen = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (res.status === 200 && res.data.length >= 3) {
-        const shuffled = res.data.sort(() => 0.5 - Math.random());
-        const selectedMemories = shuffled.slice(0, 3).map((memory, index) => ({
-          id: memory.id,
-          title: memory.title,
-          description: memory.description,
-          file: memory.image_url,
-          questionNumber: index + 1,
-        }));
-        setPosts(selectedMemories);
+  
+      if (res.status === 200) {
+        if (res.data.length < 3) {
+          Alert.alert(
+            "Insufficient Memories",
+            "Please add at least 3 memories.",
+            [
+              {
+                text: "OK",
+                onPress: () => navigation.navigate("Timeline"), // Navigate to Timeline
+              },
+            ]
+          );
+        } else {
+          const shuffled = res.data.sort(() => 0.5 - Math.random());
+          const selectedMemories = shuffled.slice(0, 3).map((memory, index) => ({
+            id: memory.id,
+            title: memory.title,
+            description: memory.description,
+            file: memory.image_url,
+            questionNumber: index + 1,
+          }));
+          setPosts(selectedMemories);
+        }
       }
     } catch (err) {
       console.error("Error fetching memories:", err.message);
@@ -64,38 +80,46 @@ const CognitiveAssessmentScreen = () => {
       setLoading(false);
     }
   };
-
   const handleResponse = (question, answer, index, correctAnswer = null) => {
     let questionScore = correctAnswer ? (answer === correctAnswer ? 2 : 0) : answer === "Yes" ? 2 : 0;
-
+  
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
-      updatedResponses[index] = { question, answer, score: questionScore };
+      updatedResponses[index] = {
+        question: question,
+        answer_text: answer,  // Store the answer as text
+        scored: questionScore,  // Store the score as a string
+      };
       return updatedResponses;
     });
-
+  
     setSelectedOptions((prev) => ({ ...prev, [index]: answer }));
     setScore((prevScore) => prevScore + questionScore);
   };
+  
 
   const handleSquareCountChange = (text) => {
     const number = parseInt(text, 10);
     if (!isNaN(number) && number >= 0 && number <= 10) {
       setSquareCount(text);
-
+  
       setUserResponses((prevResponses) => {
         const updatedResponses = [...prevResponses];
-        updatedResponses[4] = { question: "How many squares are in this image?", answer: number, score: number === 10 ? 2 : 0 };
+
+        updatedResponses[4] = {
+          question: "How many squares are in this image?",
+          answer_text: number.toString(),  // Store the answer as text
+          scored: number === 10 ? 2 : 0,  // Store the score as a string
+        };
+
         return updatedResponses;
       });
-
+  
       setScore((prevScore) => (number === 10 ? prevScore + 2 : prevScore));
     }
   };
+  
 
-  const logResponses = () => {
-    console.log("User Responses:", userResponses);
-  };
 
   const handleDayResponse = (text) => {
     const today = new Date().toLocaleDateString("en-US", { weekday: "long" }); // Get today's day (e.g., "Monday")
@@ -107,7 +131,7 @@ const CognitiveAssessmentScreen = () => {
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
-      updatedResponses[7] = { question: "Which day is today?", answer: text, score: questionScore };
+      updatedResponses[7] = { question: "Which day is today?", answer_text: text, scored: questionScore };
       return updatedResponses;
     });
 
@@ -120,7 +144,7 @@ const CognitiveAssessmentScreen = () => {
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
-      updatedResponses[8] = { question: "Identify the animal in the image", answer: value, score: questionScore };
+      updatedResponses[8] = { question: "Identify the animal in the image", answer_text: value, scored: questionScore };
       return updatedResponses;
     });
 
@@ -134,7 +158,7 @@ const CognitiveAssessmentScreen = () => {
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
-      updatedResponses[9] = { question: "Does the image contain a straight line?", answer: value, score: questionScore };
+      updatedResponses[9] = { question: "Does the image contain a straight line?", answer_text: value, scored: questionScore };
       return updatedResponses;
     });
 
@@ -142,6 +166,35 @@ const CognitiveAssessmentScreen = () => {
     setScore((prevScore) => (isCorrect ? prevScore + 2 : prevScore));
   };
 
+  const submithandler = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (token) {
+        console.log("User Responses:", userResponses);
+        console.log("sending to server");
+        const res = await axios.post(
+          "https://life-path-flask.onrender.com/answers",
+          userResponses,  // Ensure this is using the updated structure
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log("Response:", res);
+        if (res.status === 201) {
+          Alert.alert("Assessment Submitted", "Your cognitive assessment has been submitted successfully.", [
+            {
+              text: "OK",
+              onPress: () => navigation.navigate("Home"),
+            },
+          ]);
+        }
+      }
+    }
+    catch (err) {
+      console.error("Error submitting assessment:", err.message);
+    }
+  };
+  
 
   return (
     <ScrollView className="flex-1 bg-white p-6">
@@ -286,8 +339,8 @@ const CognitiveAssessmentScreen = () => {
           ))}
         </View>
       </View>
-      <TouchableOpacity className="bg-black py-3 rounded-lg mt-4 mb-10" onPress={logResponses}>
-        <Text className="text-white text-lg text-center font-bold">Log Responses</Text>
+      <TouchableOpacity className="bg-black py-3 rounded-lg mt-4 mb-10" onPress={submithandler}>
+        <Text className="text-white text-lg text-center font-bold">Submit</Text>
       </TouchableOpacity>
     </ScrollView>
   );
