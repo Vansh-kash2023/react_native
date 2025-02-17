@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -9,10 +9,12 @@ const SignupScreen = ({ navigation }) => {
     const [name, setName] = useState("");
     const [emergencyContact, setEmergencyContact] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false); // Loader state
 
     const handleSignup = async () => {
         Keyboard.dismiss(); // Close the keyboard when button is pressed
         setError(""); // Clear previous errors
+        setLoading(true); // Show loader
 
         if (!name.trim()) return setError("Please enter your name.");
         if (!email.trim()) return setError("Please enter your email.");
@@ -29,8 +31,6 @@ const SignupScreen = ({ navigation }) => {
             console.log("Signup Response:", response.data); // Log the API response
         
             if (response.status === 201) {
-                // await AsyncStorage.setItem("access_token", response.data.access_token);
-
                 Alert.alert("Signup Successful", "Your account has been created!", [
                     { text: "OK", onPress: () => navigation.navigate("Login") }
                 ]);
@@ -40,6 +40,8 @@ const SignupScreen = ({ navigation }) => {
         } catch (err) {
             console.error("Signup Error:", err);
             setError(err.message || "Something went wrong. Please try again.");
+        } finally {
+            setLoading(false); // Hide loader
         }
     };
 
@@ -95,10 +97,15 @@ const SignupScreen = ({ navigation }) => {
                 </View>
 
                 <TouchableOpacity
-                    className="bg-black py-3 rounded-lg w-full items-center mb-4"
+                    className={`bg-black py-3 rounded-lg w-full items-center mb-4 ${loading ? "opacity-50" : ""}`}
                     onPress={handleSignup}
+                    disabled={loading} // Disable button when loading
                 >
-                    <Text className="text-white text-lg font-semibold">Create Account</Text>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Text className="text-white text-lg font-semibold">Create Account</Text>
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate("Login")} className="flex items-center">

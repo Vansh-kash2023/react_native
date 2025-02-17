@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -7,24 +7,26 @@ const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false); // Added loading state
 
     const handleLogin = async () => {
-        Keyboard.dismiss(); // Close keyboard when login button is pressed
-        setError(""); // Clear previous errors
+        if (loading) return; // Prevent multiple requests
+        Keyboard.dismiss();
+        setError("");
 
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
+
+        setLoading(true); // Show loader
 
         try {
             const response = await axios.post("https://life-path-flask.onrender.com/login", {
                 email,
                 password
             });
-        console.log(email)
-        console.log(password)
+
             if (response.status === 200 && response.data.access_token) {
                 await AsyncStorage.setItem("access_token", response.data.access_token);
-                console.log(response.data.access_token);
 
                 Alert.alert("Login Successful", "Welcome back!", [
                     { text: "OK", onPress: () => navigation.navigate("Home") }
@@ -34,6 +36,8 @@ const LoginScreen = ({ navigation }) => {
             }
         } catch (err) {
             setError(err.message || "Something went wrong. Please try again.");
+        } finally {
+            setLoading(false); // Hide loader
         }
     };
 
@@ -71,8 +75,13 @@ const LoginScreen = ({ navigation }) => {
                 <TouchableOpacity
                     className="bg-black py-3 rounded-lg w-full items-center mb-4"
                     onPress={handleLogin}
+                    disabled={loading} // Disable button when loading
                 >
-                    <Text className="text-white text-lg font-semibold">Login</Text>
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                        <Text className="text-white text-lg font-semibold">Login</Text>
+                    )}
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} className="w-full flex items-center my-3">
