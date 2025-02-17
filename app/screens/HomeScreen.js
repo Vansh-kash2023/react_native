@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Home, Info, User } from "lucide-react-native"; // Import icons
+import { Bot, Home, Info, User } from "lucide-react-native"; // Import icons
 
 const HomeScreen = ({ navigation }) => {
     const handleLogout = async () => {
@@ -41,9 +41,9 @@ const HomeScreen = ({ navigation }) => {
                     <Text className="text-black font-bold">Home</Text>
                 </TouchableOpacity>
                 
-                <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Resources")}>
-                    <Info size={20} color="gray" />
-                    <Text className="text-gray-600">Resources</Text>
+                <TouchableOpacity className="items-center" onPress={() => navigation.navigate("chatbot")}>
+                    <Bot size={20} color="gray" />
+                    <Text className="text-gray-600">Chatbot</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity className="items-center" onPress={() => navigation.navigate("Profile")}>
