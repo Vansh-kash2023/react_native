@@ -1,10 +1,44 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, Linking } from "react-native";
 import { Bot, Home, Info, User } from "lucide-react-native"; // Import icons
+import axios from "axios"; // Import axios
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = ({ navigation }) => {
+    const [emergencyContact, setEmergencyContact] = useState(null);
+
+    // Fetch emergency contact on component mount
+    useEffect(() => {
+        const fetchEmergencyContact = async () => {
+            try {
+                const token = await AsyncStorage.getItem("access_token"); // Replace with actual access token
+
+                const response = await axios.get("https://life-path-flask.onrender.com/profile", {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        
+                    },
+                });
+
+                setEmergencyContact(response.data.emergency_contact); // Assuming the response has an emergency_contact field
+            } catch (error) {
+                console.error("Error fetching emergency contact:", error);
+            }
+        };
+
+        fetchEmergencyContact();
+    }, []);
+
     const handleLogout = async () => {
         navigation.replace("Login"); // Navigate to login after logout
+    };
+
+    const handleEmergencySOS = () => {
+        if (emergencyContact) {
+            Linking.openURL(`tel:${emergencyContact}`); // Opens the phone dialer with the fetched phone number
+        } else {
+            console.log("Emergency contact not available.");
+        }
     };
 
     return (
@@ -20,13 +54,13 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("RoutineReminder")}>
                     <Text className="text-white text-center">Routine Reminders</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
+                <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("Faces")}>
                     <Text className="text-white text-center">Familiar Faces</Text>
                 </TouchableOpacity>
                 <TouchableOpacity className="bg-black w-full p-4 rounded-lg" onPress={() => navigation.navigate("CognitiveAssessment")}>
                     <Text className="text-white text-center" >Cognitive Assessment</Text>
                 </TouchableOpacity>
-                <TouchableOpacity className="bg-black w-full p-4 rounded-lg">
+                <TouchableOpacity onPress={handleEmergencySOS} className="bg-red-500 w-full p-4 rounded-lg">
                     <Text className="text-white text-center">Emergency SOS</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleLogout} className="bg-black w-full p-4 rounded">
