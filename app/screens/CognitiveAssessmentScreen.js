@@ -81,7 +81,7 @@ const CognitiveAssessmentScreen = () => {
     }
   };
   const handleResponse = (question, answer, index, correctAnswer = null) => {
-    let questionScore = correctAnswer ? (answer === correctAnswer ? 2 : 0) : answer === "Yes" ? 2 : 0;
+    let questionScore = correctAnswer ? (answer === correctAnswer ? 3 : 0) : answer === "Yes" ? 3 : 0;
   
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -109,13 +109,13 @@ const CognitiveAssessmentScreen = () => {
         updatedResponses[4] = {
           question: "How many squares are in this image?",
           answer_text: number.toString(),  // Store the answer as text
-          scored: number === 10 ? 2 : 0,  // Store the score as a string
+          scored: number === 10 ? 3 : 0,  // Store the score as a string
         };
 
         return updatedResponses;
       });
   
-      setScore((prevScore) => (number === 10 ? prevScore + 2 : prevScore));
+      setScore((prevScore) => (number === 10 ? prevScore + 3 : prevScore));
     }
   };
   
@@ -127,7 +127,7 @@ const CognitiveAssessmentScreen = () => {
     const formattedToday = today.toLowerCase();
 
     const isCorrect = formattedInput === formattedToday;
-    const questionScore = isCorrect ? 2 : 0;
+    const questionScore = isCorrect ? 3 : 0;
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -135,12 +135,12 @@ const CognitiveAssessmentScreen = () => {
       return updatedResponses;
     });
 
-    setScore((prevScore) => (isCorrect ? prevScore + 2 : prevScore));
+    setScore((prevScore) => (isCorrect ? prevScore + 3 : prevScore));
   };
 
   const handleAnimalResponse = (value) => {
     const isCorrect = value === "Dog";
-    const questionScore = isCorrect ? 2 : 0;
+    const questionScore = isCorrect ? 3 : 0;
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -149,12 +149,12 @@ const CognitiveAssessmentScreen = () => {
     });
 
     setSelectedOptions((prev) => ({ ...prev, 8: value }));
-    setScore((prevScore) => (isCorrect ? prevScore + 2 : prevScore));
+    setScore((prevScore) => (isCorrect ? prevScore + 3 : prevScore));
   };
 
   const handleStraightLineResponse = (value) => {
     const isCorrect = value === "No";
-    const questionScore = isCorrect ? 2 : 0;
+    const questionScore = isCorrect ? 3 : 0;
 
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -163,39 +163,52 @@ const CognitiveAssessmentScreen = () => {
     });
 
     setSelectedOptions((prev) => ({ ...prev, 9: value }));
-    setScore((prevScore) => (isCorrect ? prevScore + 2 : prevScore));
+    setScore((prevScore) => (isCorrect ? prevScore + 3 : prevScore));
   };
-
   const submithandler = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
       if (token) {
         console.log("User Responses:", userResponses);
-        console.log("sending to server");
+        console.log("Sending to server...");
+  
         const res = await axios.post(
           "https://life-path-flask.onrender.com/answers",
-          userResponses,  // Ensure this is using the updated structure
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          userResponses, 
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        console.log("Response:", res);
+  
         if (res.status === 201) {
-          Alert.alert("Assessment Submitted", "Your cognitive assessment has been submitted successfully.", [
-            {
-              text: "OK",
-              onPress: () => navigation.navigate("Home"),
-            },
-          ]);
+          let conditionMessage = "";
+  
+          if (score < 10) {
+            conditionMessage = "Your condition is severe.";
+          } else if (score >= 10 && score < 19) {
+            conditionMessage = "Your condition is Moderate.";
+          } else if (score >= 20 && score < 25) {
+            conditionMessage = "Your condition is Mild.";
+          } else if (score >= 25) {
+            conditionMessage = "Your condition is normal. No need to worry.";
+          }
+  
+          Alert.alert(
+            "Assessment Submitted",
+            `Your cognitive assessment has been submitted successfully.\nYour Total Score: ${score}\n${conditionMessage}`,
+            [
+              {
+                text: "OK",
+                onPress: () => navigation.navigate("Home"), // Navigate on OK
+              },
+            ]
+          );
         }
       }
-    }
-    catch (err) {
+    } catch (err) {
       console.error("Error submitting assessment:", err.message);
+      Alert.alert("Submission Failed", "There was an error submitting your assessment. Please try again.");
     }
   };
   
-
   return (
     <ScrollView className="flex-1 bg-white p-6">
       <View className="mt-10 mb-6">
