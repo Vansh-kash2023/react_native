@@ -11,11 +11,13 @@ import RoutineReminder from "../screens/RoutineReminderScreen"
 import LifeTimeline from "../screens/LifeTimeline"
 import Chatbot from "../screens/Chatbot"
 import Faces from "../screens/FamiliarFaces"
+import SplashScreen from "../screens/SplashScreen";
 const Stack = createStackNavigator();
 
 const AuthNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
