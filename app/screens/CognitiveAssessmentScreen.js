@@ -13,6 +13,7 @@ import axios from "axios";
 import { RadioButton } from "react-native-paper";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { API_BASE_URL } from "../config/api";
 
 
 const CognitiveAssessmentScreen = () => {
@@ -44,7 +45,7 @@ const CognitiveAssessmentScreen = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        "https://life-path-flask.onrender.com/memories",
+        `${API_BASE_URL}/memories`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -173,7 +174,7 @@ const CognitiveAssessmentScreen = () => {
         console.log("Sending to server...");
   
         const res = await axios.post(
-          "https://life-path-flask.onrender.com/answers",
+          `${API_BASE_URL}/answers`,
           userResponses, 
           { headers: { Authorization: `Bearer ${token}` } }
         );

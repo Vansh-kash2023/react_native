@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/api";
 
 const ChatbotScreen = () => {
     const [question, setQuestion] = useState("");
@@ -35,7 +36,7 @@ const ChatbotScreen = () => {
         try {
             const token = await AsyncStorage.getItem("access_token");
             const res = await axios.post(
-                "https://life-path-flask.onrender.com/gen_ai",
+                `${API_BASE_URL}/gen_ai`,
                 { message: question },
                 {
                     headers: { Authorization: `Bearer ${token}` },

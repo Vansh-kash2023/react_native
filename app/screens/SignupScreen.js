@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/api";
 
 const SignupScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
@@ -21,7 +22,7 @@ const SignupScreen = ({ navigation }) => {
         if (!password.trim()) return setError("Please enter your password.");
 
         try {
-            const response = await axios.post("https://life-path-flask.onrender.com/signup", {
+            const response = await axios.post(`${API_BASE_URL}/signup`, {
                 name,
                 email,
                 password,

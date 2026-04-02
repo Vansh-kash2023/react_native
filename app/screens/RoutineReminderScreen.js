@@ -15,8 +15,9 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import moment from "moment";
+import { API_BASE_URL } from "../config/api";
 
-const API_URL = "https://life-path-flask.onrender.com/reminders";
+const API_URL = `${API_BASE_URL}/reminders`;
 
 const RoutineRemindersScreen = () => {
   const [reminders, setReminders] = useState([]);

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Linking } from "react-native";
 import { Bot, Home, Info, User } from "lucide-react-native"; // Import icons
 import axios from "axios"; // Import axios
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/api";
 
 const HomeScreen = ({ navigation }) => {
     const [emergencyContact, setEmergencyContact] = useState(null);
@@ -13,7 +14,7 @@ const HomeScreen = ({ navigation }) => {
             try {
                 const token = await AsyncStorage.getItem("access_token"); // Replace with actual access token
 
-                const response = await axios.get("https://life-path-flask.onrender.com/profile", {
+                const response = await axios.get(`${API_BASE_URL}/profile`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,
                         

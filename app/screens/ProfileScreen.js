@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Switch, ScrollView } from "react-native";
 
-const SettingsScreen = ({navigation}) => {
+const SettingsScreen = ({ navigation }) => {
     const [increaseTextSize, setIncreaseTextSize] = useState(false);
     const [highContrastMode, setHighContrastMode] = useState(false);
     const [enableTimedTests, setEnableTimedTests] = useState(false);
@@ -13,31 +13,27 @@ const SettingsScreen = ({navigation}) => {
     return (
         <ScrollView className="flex-1 bg-white p-4">
             <View className="mt-20">
-            <Text
-                className="font-bold text-gray-900 mb-6 text-4xl"
-                 // Dynamically adjust size (bigger for headers)
-            >
-                Settings/Profile
-            </Text>
-
-            {/* Manage Reminders */}
-            <View className="mb-6">
                 <Text
-                    className="font-semibold text-gray-800 mb-2"
-                    style={{ fontSize: textSize }}
+                    className="font-bold text-gray-900 mb-6 text-4xl"
+                // Dynamically adjust size (bigger for headers)
                 >
-                    Manage Reminders
+                    Settings/Profile
                 </Text>
-                <TouchableOpacity className="bg-black py-3 rounded-lg items-center"  onPress={() => navigation.navigate("RoutineReminder")}>
-                    <Text className="text-white" style={{ fontSize: textSize }}>
-                        Edit Reminders
+
+                {/* Manage Reminders */}
+                <View className="mb-6">
+                    <Text
+                        className="font-semibold text-gray-800 mb-2"
+                        style={{ fontSize: textSize }}
+                    >
+                        Manage Reminders
                     </Text>
-                </TouchableOpacity>
-            </View>
-
-          
-
-         
+                    <TouchableOpacity className="bg-black py-3 rounded-lg items-center" onPress={() => navigation.navigate("RoutineReminder")}>
+                        <Text className="text-white" style={{ fontSize: textSize }}>
+                            Edit Reminders
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );

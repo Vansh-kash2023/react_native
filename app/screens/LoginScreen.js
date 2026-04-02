@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeedback, Alert, ActivityIndicator } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "../config/api";
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState("");
@@ -20,7 +21,7 @@ const LoginScreen = ({ navigation }) => {
         setLoading(true); // Show loader
 
         try {
-            const response = await axios.post("https://life-path-flask.onrender.com/login", {
+            const response = await axios.post(`${API_BASE_URL}/login`, {
                 email,
                 password
             });

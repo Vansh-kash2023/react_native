@@ -8,6 +8,7 @@ import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from "../config/api";
 
 const InteractiveTimeline = () => {
   const [posts, setPosts] = useState([]);
@@ -40,7 +41,7 @@ const InteractiveTimeline = () => {
   const fetchMemories = async (token) => {
     setLoading(true);
     try {
-      const res = await axios.get("https://life-path-flask.onrender.com/memories", {
+      const res = await axios.get(`${API_BASE_URL}/memories`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -63,7 +64,7 @@ const InteractiveTimeline = () => {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5,
@@ -93,7 +94,7 @@ const InteractiveTimeline = () => {
         image: `data:image/${imageType};base64,${image}`,
       };
 
-      const res = await axios.post("https://life-path-flask.onrender.com/memories", payload, {
+      const res = await axios.post(`${API_BASE_URL}/memories`, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -122,7 +123,7 @@ const InteractiveTimeline = () => {
   const handleDelete = async (id) => {
     setDeleting(id);
     try {
-      const res = await axios.delete(`https://life-path-flask.onrender.com/memories/${id}`, {
+      const res = await axios.delete(`${API_BASE_URL}/memories/${id}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
   
