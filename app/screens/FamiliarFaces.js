@@ -1,24 +1,32 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, Keyboard,
   Alert, Image, ActivityIndicator, KeyboardAvoidingView,
-  Platform, ScrollView, TouchableWithoutFeedback
+  Platform, ScrollView, TouchableWithoutFeedback, Modal
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from '@expo/vector-icons';
+import { Plus, Edit2, X, ChevronLeft } from "lucide-react-native";
 import { API_BASE_URL } from "../config/api";
+import { useTheme } from "../context/ThemeContext";
+import Toast from 'react-native-toast-message';
 
-const InteractiveTimeline = () => {
+const FamiliarFaces = ({ navigation }) => {
+  const { colors, fontSizeMultiplier } = useTheme();
   const [posts, setPosts] = useState([]);
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
+  const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [imageType, setImageType] = useState("jpeg");
   const [error, setError] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [loading, setLoading] = useState(false);
+  
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(null);
   const [accessToken, setAccessToken] = useState("");
@@ -30,9 +38,12 @@ const InteractiveTimeline = () => {
         if (token) {
           setAccessToken(token);
           fetchMemories(token);
+        } else {
+          setLoading(false);
         }
       } catch (err) {
         console.error("Token fetch error:", err);
+        setLoading(false);
       }
     };
     getTokenAndFetchMemories();
@@ -50,13 +61,14 @@ const InteractiveTimeline = () => {
           id: memory.id,
           name: memory.name,
           relationship: memory.relationship,
+          description: memory.description || "",
           file: memory.image_url,
         }));
         setPosts(formattedPosts);
       }
     } catch (err) {
-      console.error("Error fetching memories:", err.message);
-      setError("Failed to load memories.");
+      console.error("Error fetching faces:", err.message);
+      setError("Failed to load familiar faces.");
     } finally {
       setLoading(false);
     }
@@ -77,41 +89,76 @@ const InteractiveTimeline = () => {
     }
   };
 
-  const handleAddPost = async () => {
+  const openAddModal = () => {
+    setEditingId(null);
+    setName("");
+    setRelationship("");
+    setDescription("");
+    setImage(null);
+    setError("");
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (post) => {
+    setEditingId(post.id);
+    setName(post.name);
+    setRelationship(post.relationship);
+    setDescription(post.description);
+    setImage(null);
+    setError("");
+    setIsModalVisible(true);
+  };
+
+  const handleSavePost = async () => {
     if (submitting) return;
     Keyboard.dismiss();
     setError("");
 
     if (!name.trim()) return setError("Please enter a name.");
     if (!relationship.trim()) return setError("Please enter a relationship.");
-    if (!image) return setError("Please select an image.");
+    if (!editingId && !image) return setError("Please select an image.");
 
     setSubmitting(true);
     try {
-      const payload = {
+      let payload = {
         name: name.trim(),
         relationship: relationship.trim(),
+        description: description.trim(),
         date: new Date().toISOString().split("T")[0],
-        image: `data:image/${imageType};base64,${image}`,
       };
 
-      const res = await axios.post(`${API_BASE_URL}/faces`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      if (image) {
+        payload.image = `data:image/${imageType};base64,${image}`;
+      }
 
-      if (res.status === 201) {
-        setName("");
-        setRelationship("");
-        setImage(null);
-        setIsAdding(false);
-        Alert.alert("Success", "Memory added successfully!");
-        setLoading(true);
+      let res;
+      if (editingId) {
+        res = await axios.patch(`${API_BASE_URL}/faces/${editingId}`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      } else {
+        res = await axios.post(`${API_BASE_URL}/faces`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      }
+
+      if (res.status === 201 || res.status === 200) {
+        setIsModalVisible(false);
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: editingId ? "Relationship updated!" : "Relationship added!",
+          position: 'top',
+        });
         await fetchMemories(accessToken);
       } else {
-        setError(res.data.message || "Failed to add memory.");
+        setError(res.data.message || "Failed to save relationship.");
       }
     } catch (err) {
       console.error("Network Error:", err.message);
@@ -122,124 +169,222 @@ const InteractiveTimeline = () => {
   };
 
   const handleDelete = async (id) => {
-    setDeleting(id);
-    try {
-      const res = await axios.delete(`${API_BASE_URL}/faces/${id}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-  
-      if (res.status === 200) {
-        Alert.alert("Success", "Memory deleted successfully!");
-        await fetchMemories(accessToken);
-      } else {
-        setError(res.data.message || "Failed to delete memory.");
+    Alert.alert("Confirm", "Are you sure you want to delete this familiar face?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive", onPress: async () => {
+          setDeleting(id);
+          try {
+            const res = await axios.delete(`${API_BASE_URL}/faces/${id}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            if (res.status === 200) {
+              Toast.show({
+                type: 'success',
+                text1: 'Deleted',
+                text2: 'Relationship removed successfully.',
+                position: 'top',
+              });
+              await fetchMemories(accessToken);
+            } else {
+              setError(res.data.message || "Failed to delete relationship.");
+            }
+          } catch (err) {
+            console.error("Error deleting memory:", err.message);
+            setError("Failed to delete memory.");
+          } finally {
+            setDeleting(null);
+          }
+        }
       }
-    } catch (err) {
-      console.error("Error deleting memory:", err.message);
-      setError("Failed to delete memory.");
-    } finally {
-      setDeleting(null);
-    }
+    ]);
   };
-  
+
+  const getRelationshipColor = (rel) => {
+    if (!rel) return colors.textMuted || '#94a3b8';
+    const r = rel.toLowerCase();
+    if (['wife', 'husband', 'spouse', 'partner'].some(keyword => r.includes(keyword))) return '#ec4899'; // pink
+    if (['son', 'daughter', 'child', 'kid'].some(keyword => r.includes(keyword))) return '#8b5cf6'; // violet
+    if (['mother', 'father', 'parent', 'mom', 'dad'].some(keyword => r.includes(keyword))) return '#14b8a6'; // teal
+    if (['sister', 'brother', 'sibling'].some(keyword => r.includes(keyword))) return '#f59e0b'; // amber
+    if (['friend', 'buddy'].some(keyword => r.includes(keyword))) return '#10b981'; // emerald
+    if (['caregiver', 'nurse', 'doctor'].some(keyword => r.includes(keyword))) return '#3b82f6'; // blue
+    return colors.textMuted || '#94a3b8'; // fallback
+  };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, padding: 16 }}
-          keyboardShouldPersistTaps="handled"
-          scrollEnabled={true}
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border, backgroundColor: colors.background }}>
+        <TouchableOpacity 
+          style={{ padding: 8, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, marginRight: 16 }} 
+          onPress={() => navigation.goBack()}
         >
-          <Text className="text-4xl font-bold text-gray-800 mb-4 mt-10">Familiar Faces</Text>
+          <ChevronLeft size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={{ fontSize: 24 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, flex: 1 }}>
+          Familiar Faces
+        </Text>
+      </View>
+      <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 24, paddingBottom: 100 }}>
 
-          {error ? <Text className="text-red-500 mb-2">{error}</Text> : null}
+        {error && !isModalVisible ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
 
-          <TouchableOpacity
-            className="bg-black py-3 rounded-lg items-center mb-4 mt-6"
-            onPress={() => setIsAdding((prev) => !prev)}
-          >
-            <Text className="text-white font-bold text-lg">{isAdding ? "Cancel" : "Add New Relationship"}</Text>
-          </TouchableOpacity>
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+        ) : (
+          posts.map((item) => (
+            <View key={item.id} style={{ 
+                backgroundColor: colors.card, 
+                borderRadius: 16, 
+                padding: 16, 
+                marginBottom: 16,
+                shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 3,
+                borderColor: colors.border, borderWidth: 1
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 20 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, marginBottom: 6 }}>
+                    {item.name}
+                  </Text>
+                  <View style={{ backgroundColor: getRelationshipColor(item.relationship), alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 16, marginBottom: 12 }}>
+                    <Text style={{ fontSize: 13 * fontSizeMultiplier, fontWeight: '600', color: '#fff' }}>
+                        {item.relationship}
+                    </Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row' }}>
+                  <TouchableOpacity onPress={() => openEditModal(item)} style={{ marginRight: 12 }}>
+                    <Edit2 size={24} color={colors.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(item.id)} disabled={deleting === item.id}>
+                    {deleting === item.id ? (
+                      <ActivityIndicator size="small" color={colors.danger} />
+                    ) : (
+                      <Ionicons name="trash" size={24} color={colors.danger} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {item.description ? (
+                <Text style={{ fontSize: 15 * fontSizeMultiplier, color: colors.textMuted, marginBottom: 12 }}>
+                    {item.description}
+                </Text>
+              ) : null}
+              
+              {item.file ? (
+                <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+                  <Image
+                    source={{ uri: item.file }}
+                    style={{ width: "100%", height: 200, borderRadius: 12 }}
+                  />
+                </TouchableWithoutFeedback>
+              ) : null}
+            </View>
+          ))
+        )}
+      </ScrollView>
 
-          {isAdding && (
-            <View className="mb-4">
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={{
+          position: 'absolute', bottom: 30, right: 30, width: 64, height: 64, 
+          borderRadius: 32, backgroundColor: colors.primary, justifyContent: 'center', 
+          alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 8
+        }}
+        onPress={openAddModal}
+      >
+        <Plus size={32} color={colors.white} />
+      </TouchableOpacity>
+
+      {/* Add / Edit Modal */}
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+            <View style={{ backgroundColor: colors.card, padding: 24, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <Text style={{ fontSize: 20 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text }}>
+                  {editingId ? "Edit Relationship" : "Add New Face"}
+                </Text>
+                <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                  <X size={28} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
+
               <TextInput
-                className="bg-gray-100 p-3 rounded-lg mb-2"
-                placeholder="Enter name"
+                style={{ 
+                  backgroundColor: colors.background, color: colors.text, padding: 16, 
+                  borderRadius: 12, marginBottom: 12, fontSize: 16 * fontSizeMultiplier,
+                  borderWidth: 1, borderColor: colors.border
+                }}
+                placeholder="Name"
+                placeholderTextColor={colors.textMuted}
                 value={name}
                 onChangeText={setName}
               />
               <TextInput
-                className="bg-gray-100 p-3 rounded-lg mb-2"
-                placeholder="Enter relationship"
+                style={{ 
+                  backgroundColor: colors.background, color: colors.text, padding: 16, 
+                  borderRadius: 12, marginBottom: 12, fontSize: 16 * fontSizeMultiplier,
+                  borderWidth: 1, borderColor: colors.border
+                }}
+                placeholder="Relationship (e.g. Son, Daughter, Friend)"
+                placeholderTextColor={colors.textMuted}
                 value={relationship}
                 onChangeText={setRelationship}
               />
+              <TextInput
+                style={{ 
+                  backgroundColor: colors.background, color: colors.text, padding: 16, 
+                  borderRadius: 12, marginBottom: 12, fontSize: 16 * fontSizeMultiplier,
+                  borderWidth: 1, borderColor: colors.border
+                }}
+                placeholder="Description (e.g. How we met - optional)"
+                placeholderTextColor={colors.textMuted}
+                value={description}
+                onChangeText={setDescription}
+                multiline
+              />
+
               <TouchableOpacity
-                className="bg-black py-3 rounded-lg items-center mb-2"
+                style={{ 
+                  backgroundColor: colors.primaryLight, padding: 16, borderRadius: 12, 
+                  alignItems: 'center', marginBottom: 12 
+                }}
                 onPress={pickImage}
               >
-                <Text className="text-white font-bold text-lg">Pick an Image</Text>
+                <Text style={{ color: colors.primaryDark, fontWeight: 'bold', fontSize: 16 * fontSizeMultiplier }}>
+                  {image ? "Change Image" : (editingId ? "Update Image (Optional)" : "Pick an Image")}
+                </Text>
               </TouchableOpacity>
+
               {image && (
-                <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                  <Image
-                    source={{ uri: `data:image/${imageType};base64,${image}` }}
-                    style={{ width: "100%", height: 150, borderRadius: 10, marginTop: 10 }}
-                  />
-                </TouchableWithoutFeedback>
+                <Image
+                  source={{ uri: `data:image/${imageType};base64,${image}` }}
+                  style={{ width: "100%", height: 150, borderRadius: 12, marginBottom: 12 }}
+                />
               )}
+
               <TouchableOpacity
-                className="bg-black py-3 rounded-lg items-center mt-3"
-                onPress={handleAddPost}
+                style={{ backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center' }}
+                onPress={handleSavePost}
                 disabled={submitting}
               >
-                <Text className="text-white font-bold text-lg">{submitting ? "Saving..." : "Save"}</Text>
+                <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier }}>
+                  {submitting ? "Saving..." : "Save Face"}
+                </Text>
               </TouchableOpacity>
-            </View>
-          )}
 
-          {loading ? (
-            <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
-          ) : (
-            posts.map((item) => (
-              <View key={item.id} className="bg-gray-100 p-4 rounded-lg mb-4">
-                <Text className="text-lg font-bold text-gray-800 mb-1">{item.name}</Text>
-                <Text className="text-gray-600">{item.relationship}</Text>
-                {item.file && (
-                  <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-                    <Image
-                      source={{ uri: item.file }}
-                      style={{ width: "100%", height: 200, borderRadius: 10, marginTop: 10 }}
-                    />
-                  </TouchableWithoutFeedback>
-                )}
-                <TouchableOpacity
-                  onPress={() => handleDelete(item.id)}
-                  disabled={deleting === item.id}
-                  style={{
-                    position: "absolute",
-                    top: 10,
-                    right: 10,
-                    padding: 10,
-                    backgroundColor: "#f00",
-                    borderRadius: 20,
-                  }}
-                >
-                  {deleting === item.id ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Ionicons name="trash" size={18} color="white" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </TouchableWithoutFeedback>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+    </View>
   );
 };
 
-export default InteractiveTimeline;
+export default FamiliarFaces;

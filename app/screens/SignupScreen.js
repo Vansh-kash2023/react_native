@@ -3,19 +3,21 @@ import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeed
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "../config/api";
+import { useTheme } from "../context/ThemeContext";
 
 const SignupScreen = ({ navigation }) => {
+    const { colors, fontSizeMultiplier } = useTheme();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [emergencyContact, setEmergencyContact] = useState("");
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false); // Loader state
+    const [loading, setLoading] = useState(false);
 
     const handleSignup = async () => {
-        Keyboard.dismiss(); // Close the keyboard when button is pressed
-        setError(""); // Clear previous errors
-        setLoading(true); // Show loader
+        Keyboard.dismiss(); 
+        setError(""); 
+        setLoading(true); 
 
         if (!name.trim()) return setError("Please enter your name.");
         if (!email.trim()) return setError("Please enter your email.");
@@ -28,8 +30,6 @@ const SignupScreen = ({ navigation }) => {
                 password,
                 emergency_contact: emergencyContact
             });
-
-            console.log("Signup Response:", response.data); // Log the API response
         
             if (response.status === 201) {
                 Alert.alert("Signup Successful", "Your account has been created!", [
@@ -42,55 +42,59 @@ const SignupScreen = ({ navigation }) => {
             console.error("Signup Error:", err);
             setError(err.message || "Something went wrong. Please try again.");
         } finally {
-            setLoading(false); // Hide loader
+            setLoading(false); 
         }
     };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-1 justify-center bg-white px-6">
-                <Text className="text-4xl w-full self-start font-bold text-gray-800 mb-2">Sign Up</Text>
+            <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.background, paddingHorizontal: 24 }}>
+                <Text style={{ fontSize: 36 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, marginBottom: 8 }}>Sign Up</Text>
 
-                {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
-                <Text className="text-center m-4 mx-1">Please fill in the details below to create your account</Text>
+                {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
+                <Text style={{ textAlign: 'left', color: colors.textMuted, marginBottom: 24, fontSize: 16 * fontSizeMultiplier }}>Please fill in the details below to create your account</Text>
 
-                <View className="w-full flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Name</Text>
+                <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Name</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Enter your name"
+                        placeholderTextColor={colors.textMuted}
                         value={name}
                         onChangeText={setName}
                     />
                 </View>
 
-                <View className="w-full flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Email</Text>
+                <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Email</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Enter your email"
+                        placeholderTextColor={colors.textMuted}
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
                     />
                 </View>
 
-                <View className="w-full flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Password</Text>
+                <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Password</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Create a password"
+                        placeholderTextColor={colors.textMuted}
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
                     />
                 </View>
 
-                <View className="w-full flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Emergency Contact</Text>
+                <View style={{ marginBottom: 24 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Emergency Contact</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Enter emergency contact's number"
+                        placeholderTextColor={colors.textMuted}
                         value={emergencyContact}
                         onChangeText={setEmergencyContact}
                         keyboardType="phone-pad"
@@ -98,19 +102,21 @@ const SignupScreen = ({ navigation }) => {
                 </View>
 
                 <TouchableOpacity
-                    className={`bg-black py-3 rounded-lg w-full items-center mb-4 ${loading ? "opacity-50" : ""}`}
+                    style={{ backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 24, opacity: loading ? 0.7 : 1 }}
                     onPress={handleSignup}
-                    disabled={loading} // Disable button when loading
+                    disabled={loading} 
                 >
                     {loading ? (
-                        <ActivityIndicator size="small" color="#fff" />
+                        <ActivityIndicator size="small" color={colors.white} />
                     ) : (
-                        <Text className="text-white text-lg font-semibold">Create Account</Text>
+                        <Text style={{ color: colors.white, fontSize: 18 * fontSizeMultiplier, fontWeight: '600' }}>Create Account</Text>
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate("Login")} className="flex items-center">
-                    <Text className="text-gray-600">Already have an account? <Text className="text-black font-semibold">Login</Text></Text>
+                <TouchableOpacity onPress={() => navigation.navigate("Login")} style={{ alignItems: 'center' }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 16 * fontSizeMultiplier }}>
+                        Already have an account? <Text style={{ color: colors.text, fontWeight: '600' }}>Login</Text>
+                    </Text>
                 </TouchableOpacity>
             </View>
         </TouchableWithoutFeedback>

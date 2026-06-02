@@ -3,22 +3,25 @@ import { View, Text, TextInput, TouchableOpacity, Keyboard, TouchableWithoutFeed
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "../config/api";
+import { useTheme } from "../context/ThemeContext";
+import Toast from 'react-native-toast-message';
 
 const LoginScreen = ({ navigation }) => {
+    const { colors, fontSizeMultiplier } = useTheme();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false); // Added loading state
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (loading) return; // Prevent multiple requests
+        if (loading) return; 
         Keyboard.dismiss();
         setError("");
 
         if (!email.trim()) return setError("Please enter your email.");
         if (!password.trim()) return setError("Please enter your password.");
 
-        setLoading(true); // Show loader
+        setLoading(true); 
 
         try {
             const response = await axios.post(`${API_BASE_URL}/login`, {
@@ -29,44 +32,50 @@ const LoginScreen = ({ navigation }) => {
             if (response.status === 200 && response.data.access_token) {
                 await AsyncStorage.setItem("access_token", response.data.access_token);
 
-                Alert.alert("Login Successful", "Welcome back!", [
-                    { text: "OK", onPress: () => navigation.navigate("Home") }
-                ]);
+                Toast.show({
+                    type: 'success',
+                    text1: 'Login Successful',
+                    text2: 'Welcome back!',
+                    position: 'top',
+                });
+                navigation.navigate("Home");
             } else {
                 setError(response.data.message || "Login failed. Please try again.");
             }
         } catch (err) {
             setError(err.message || "Something went wrong. Please try again.");
         } finally {
-            setLoading(false); // Hide loader
+            setLoading(false); 
         }
     };
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-1 justify-center bg-white px-6">
-                <View className="w-full self-start">
-                    <Text className="text-4xl font-bold text-gray-800 mb-6">Login</Text>
+            <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.background, paddingHorizontal: 24 }}>
+                <View style={{ width: '100%', alignSelf: 'flex-start' }}>
+                    <Text style={{ fontSize: 36 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, marginBottom: 24 }}>Login</Text>
                 </View>
 
-                {error ? <Text className="text-red-500 mb-3">{error}</Text> : null}
+                {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
 
-                <View className="flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Email</Text>
+                <View style={{ marginBottom: 16 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Email</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Enter your email"
+                        placeholderTextColor={colors.textMuted}
                         value={email}
                         onChangeText={setEmail}
                         keyboardType="email-address"
                     />
                 </View>
 
-                <View className="flex flex-col gap-2">
-                    <Text className="font-bold text-lg">Password</Text>
+                <View style={{ marginBottom: 24 }}>
+                    <Text style={{ fontWeight: 'bold', fontSize: 18 * fontSizeMultiplier, color: colors.text, marginBottom: 8 }}>Password</Text>
                     <TextInput
-                        className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                        style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border }}
                         placeholder="Enter your password"
+                        placeholderTextColor={colors.textMuted}
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
@@ -74,23 +83,25 @@ const LoginScreen = ({ navigation }) => {
                 </View>
 
                 <TouchableOpacity
-                    className="bg-black py-3 rounded-lg w-full items-center mb-4"
+                    style={{ backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16, opacity: loading ? 0.7 : 1 }}
                     onPress={handleLogin}
-                    disabled={loading} // Disable button when loading
+                    disabled={loading} 
                 >
                     {loading ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <ActivityIndicator size="small" color={colors.white} />
                     ) : (
-                        <Text className="text-white text-lg font-semibold">Login</Text>
+                        <Text style={{ color: colors.white, fontSize: 18 * fontSizeMultiplier, fontWeight: '600' }}>Login</Text>
                     )}
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} className="w-full flex items-center my-3">
-                    <Text className="text-gray-600">Forgot Password?</Text>
+                <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")} style={{ width: '100%', alignItems: 'center', marginVertical: 12 }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 16 * fontSizeMultiplier }}>Forgot Password?</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => navigation.navigate("Signup")} className="w-full flex items-center">
-                    <Text className="text-gray-600">Don't have an account? <Text className="text-black font-semibold">Sign Up</Text></Text>
+                <TouchableOpacity onPress={() => navigation.navigate("Signup")} style={{ width: '100%', alignItems: 'center' }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 16 * fontSizeMultiplier }}>
+                        Don't have an account? <Text style={{ color: colors.text, fontWeight: '600' }}>Sign Up</Text>
+                    </Text>
                 </TouchableOpacity>
             </View>
         </TouchableWithoutFeedback>

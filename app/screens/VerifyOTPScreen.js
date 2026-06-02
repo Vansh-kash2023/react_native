@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
 const VerifyOTPScreen = ({ navigation, route }) => {
+    const { colors, fontSizeMultiplier } = useTheme();
     const { email } = route.params;
     const [otp, setOtp] = useState("");
 
@@ -14,20 +16,21 @@ const VerifyOTPScreen = ({ navigation, route }) => {
     };
 
     return (
-        <View className="flex-1 justify-center bg-white px-6">
-            <Text className="text-2xl font-bold text-gray-800 mb-4">Enter OTP</Text>
-            <Text className="text-gray-600 mb-4">Check your email for the OTP.</Text>
+        <View style={{ flex: 1, justifyContent: 'center', backgroundColor: colors.background, paddingHorizontal: 24 }}>
+            <Text style={{ fontSize: 28 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, marginBottom: 16 }}>Enter OTP</Text>
+            <Text style={{ fontSize: 16 * fontSizeMultiplier, color: colors.textMuted, marginBottom: 24 }}>Check your email for the OTP.</Text>
 
             <TextInput
-                className="w-full p-3 bg-gray-100 rounded-2xl mb-3"
+                style={{ width: '100%', padding: 16, backgroundColor: colors.card, borderRadius: 16, color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 24 }}
                 placeholder="Enter OTP"
+                placeholderTextColor={colors.textMuted}
                 value={otp}
                 onChangeText={setOtp}
                 keyboardType="numeric"
             />
 
-            <TouchableOpacity className="bg-black py-3 rounded-lg w-full items-center" onPress={handleVerifyOTP}>
-                <Text className="text-white text-lg font-semibold">Verify OTP</Text>
+            <TouchableOpacity style={{ backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center' }} onPress={handleVerifyOTP}>
+                <Text style={{ color: colors.white, fontSize: 18 * fontSizeMultiplier, fontWeight: '600' }}>Verify OTP</Text>
             </TouchableOpacity>
         </View>
     );

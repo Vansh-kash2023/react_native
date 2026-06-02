@@ -1,21 +1,25 @@
 import { useState, useRef, useEffect } from "react";
 import { 
     View, Text, TextInput, TouchableOpacity, Keyboard, 
-    TouchableWithoutFeedback, ScrollView, ActivityIndicator 
+    TouchableWithoutFeedback, ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView 
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Send, Bot, User, ChevronLeft } from "lucide-react-native";
 import { API_BASE_URL } from "../config/api";
+import { useTheme } from "../context/ThemeContext";
 
-const ChatbotScreen = () => {
+const ChatbotScreen = ({ navigation }) => {
+    const { colors, fontSizeMultiplier } = useTheme();
     const [question, setQuestion] = useState("");
     const [messages, setMessages] = useState([
-        { text: "Hi! How can I help?", sender: "bot" } // Static initial bot message
+        { text: "Hi! How can I help you today?", sender: "bot", id: Date.now() }
     ]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const scrollViewRef = useRef(null);
-  
+
     useEffect(() => {
         if (scrollViewRef.current) {
             scrollViewRef.current.scrollToEnd({ animated: true });
@@ -23,12 +27,13 @@ const ChatbotScreen = () => {
     }, [messages]);
 
     const handleAskQuestion = async () => {
+        if (!question.trim()) return;
+
         Keyboard.dismiss();
         setError("");
 
-        if (!question.trim()) return setError("Please enter a question.");
-
-        const userMessage = { text: question, sender: "user" };
+        const userMsgText = question.trim();
+        const userMessage = { text: userMsgText, sender: "user", id: Date.now() };
         setMessages((prevMessages) => [...prevMessages, userMessage]);
         setQuestion("");
         setLoading(true);
@@ -37,76 +42,148 @@ const ChatbotScreen = () => {
             const token = await AsyncStorage.getItem("access_token");
             const res = await axios.post(
                 `${API_BASE_URL}/gen_ai`,
-                { message: question },
+                { message: userMsgText },
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
 
             if (res.status === 200) {
-                const botMessage = { text: res.data.message || "No response received.", sender: "bot" };
+                const botMessage = { text: res.data.message || "No response received.", sender: "bot", id: Date.now() + 1 };
                 setMessages((prevMessages) => [...prevMessages, botMessage]);
             } else {
-                setError("Failed to fetch response. Try again.");
+                setMessages((prevMessages) => [...prevMessages, { text: "Failed to fetch response.", sender: "bot", id: Date.now() + 1, isError: true }]);
             }
         } catch (err) {
             console.log(err);
-            setError("Something went wrong. Please try again.");
+            setMessages((prevMessages) => [...prevMessages, { text: "Something went wrong. Please check your connection.", sender: "bot", id: Date.now() + 1, isError: true }]);
         } finally {
             setLoading(false);
+            if (scrollViewRef.current) setTimeout(() => scrollViewRef.current.scrollToEnd({ animated: true }), 100);
         }
     };
 
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-1 bg-white px-6 py-4 mt-20">
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+                <View style={{ flex: 1 }}>
                 
-                {/* Heading */}
-                <Text className="text-4xl font-bold text-gray-800 mb-4 self-center">Care Taker Asisstant</Text>
+                {/* Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border, paddingTop: 40 }}>
+                    <TouchableOpacity 
+                        style={{ padding: 8, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, marginRight: 16 }} 
+                        onPress={() => navigation.goBack()}
+                    >
+                        <ChevronLeft size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 24 * fontSizeMultiplier, fontWeight: 'bold', color: colors.text, flex: 1 }}>
+                        Care Taker Assistant
+                    </Text>
+                </View>
                 
                 {/* Chat Window */}
-                <View className="flex-1 bg-gray-100 p-4 rounded-2xl mb-4">
-                    <ScrollView 
-                        ref={scrollViewRef} 
-                        contentContainerStyle={{ flexGrow: 1 }}
-                        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-                    >
-                        {messages.map((msg, index) => (
-                            <View 
-                                key={index} 
-                                className={`mb-2 p-3 rounded-xl max-w-[80%] ${msg.sender === 'user' ? 'bg-blue-500 self-end' : 'bg-gray-300 self-start'}`}
-                            >
-                                <Text className={`${msg.sender === 'user' ? 'text-white' : 'text-black'} text-lg`}>{msg.text}</Text>
-                            </View>
-                        ))}
-                        {loading && (
-                            <ActivityIndicator size="large" color="#0000ff" className="self-center mt-2" />
-                        )}
-                    </ScrollView>
-                </View>
+                <ScrollView 
+                    ref={scrollViewRef} 
+                    contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                >
+                    {messages.map((msg, index) => {
+                        const isBot = msg.sender === 'bot';
+                        return (
+                            <View key={msg.id} style={{ 
+                                flexDirection: isBot ? 'row' : 'row-reverse',
+                                alignItems: 'flex-end',
+                                marginBottom: 16 
+                            }}>
+                                {/* Avatar */}
+                                <View style={{ 
+                                    width: 32, height: 32, borderRadius: 16, 
+                                    backgroundColor: isBot ? colors.primaryLight : colors.card,
+                                    marginRight: isBot ? 8 : 0,
+                                    marginLeft: isBot ? 0 : 8,
+                                    justifyContent: 'center', alignItems: 'center',
+                                    borderWidth: 1, borderColor: colors.border
+                                }}>
+                                    {isBot ? <Bot size={18} color={colors.primaryDark} /> : <User size={18} color={colors.textMuted} />}
+                                </View>
 
-                {/* Error Message */}
-                {error ? <Text className="text-red-500 mb-3 text-lg">{error}</Text> : null}
-                
+                                {/* Message Bubble */}
+                                <View style={{
+                                    maxWidth: '75%',
+                                    backgroundColor: isBot ? colors.card : colors.primary,
+                                    paddingVertical: 12, paddingHorizontal: 16,
+                                    borderRadius: 20,
+                                    borderBottomLeftRadius: isBot ? 4 : 20,
+                                    borderBottomRightRadius: isBot ? 20 : 4,
+                                    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
+                                    borderWidth: isBot ? 1 : 0, borderColor: colors.border
+                                }}>
+                                    <Text style={{ 
+                                        color: isBot ? (msg.isError ? colors.danger : colors.text) : colors.white, 
+                                        fontSize: 16 * fontSizeMultiplier,
+                                        lineHeight: 24 * fontSizeMultiplier
+                                    }}>
+                                        {msg.text}
+                                    </Text>
+                                </View>
+                            </View>
+                        );
+                    })}
+
+                    {loading && (
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 16 }}>
+                            <View style={{ 
+                                width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primaryLight,
+                                marginRight: 8, justifyContent: 'center', alignItems: 'center',
+                                borderWidth: 1, borderColor: colors.border
+                            }}>
+                                <Bot size={18} color={colors.primaryDark} />
+                            </View>
+                            <View style={{
+                                backgroundColor: colors.card, paddingVertical: 14, paddingHorizontal: 16,
+                                borderRadius: 20, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: colors.border
+                            }}>
+                                <ActivityIndicator size="small" color={colors.primary} />
+                            </View>
+                        </View>
+                    )}
+                </ScrollView>
+
                 {/* Input Area */}
-                <View className="flex-row items-center gap-2 bg-gray-100 p-3 rounded-2xl">
+                <View style={{ 
+                    flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+                    backgroundColor: colors.card, borderTopWidth: 1, borderColor: colors.border
+                }}>
                     <TextInput
-                        className="flex-1 p-2 bg-white rounded-lg text-lg"
-                        placeholder="Enter your question"
+                        style={{
+                            flex: 1, minHeight: 48, maxHeight: 120,
+                            backgroundColor: colors.background, color: colors.text, 
+                            borderRadius: 24, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14,
+                            fontSize: 16 * fontSizeMultiplier, borderWidth: 1, borderColor: colors.border
+                        }}
+                        placeholder="Type a message..."
+                        placeholderTextColor={colors.textMuted}
                         value={question}
                         onChangeText={setQuestion}
+                        multiline
                     />
                     <TouchableOpacity
-                        className="bg-black p-3 rounded-lg"
+                        style={{ 
+                            width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, 
+                            justifyContent: 'center', alignItems: 'center', marginLeft: 8,
+                            opacity: question.trim() ? 1 : 0.6
+                        }}
                         onPress={handleAskQuestion}
-                        disabled={loading}
+                        disabled={loading || !question.trim()}
                     >
-                        <Text className="text-white font-semibold text-lg">{loading ? "Loading..." : "Send"}</Text>
+                        <Send size={20} color={colors.white} style={{ marginLeft: 2 }} />
                     </TouchableOpacity>
                 </View>
-                
-            </View>
-        </TouchableWithoutFeedback>
+
+                </View>
+
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 

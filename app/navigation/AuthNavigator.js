@@ -11,6 +11,7 @@ import RoutineReminder from "../screens/RoutineReminderScreen"
 import LifeTimeline from "../screens/LifeTimeline"
 import Chatbot from "../screens/Chatbot"
 import Faces from "../screens/FamiliarFaces"
+import AssessmentResult from "../screens/AssessmentResultScreen"
 import SplashScreen from "../screens/SplashScreen";
 const Stack = createStackNavigator();
 
@@ -30,6 +31,7 @@ const AuthNavigator = () => {
       <Stack.Screen name="Timeline" component={LifeTimeline} />
       <Stack.Screen name="Chatbot" component={Chatbot} />
       <Stack.Screen name="Faces" component={Faces} />
+      <Stack.Screen name="AssessmentResult" component={AssessmentResult} />
     </Stack.Navigator>
   );
 };
